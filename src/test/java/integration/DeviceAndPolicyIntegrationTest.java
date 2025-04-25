@@ -12,10 +12,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class DeviceAndPolicyIntegrationTest {
-    
     @Mock
     private FailingPolicy mockFailingPolicy;
-    
     @Spy
     private Device device;
     
@@ -38,13 +36,10 @@ public class DeviceAndPolicyIntegrationTest {
         @Test
         @DisplayName("on() should set device to on state when policy allows")
         void onShouldSetDeviceOnWhenPolicyAllows() {
-            // Arrange
             when(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy.attemptOn()).thenReturn(true);
             
-            // Act
             DeviceAndPolicyIntegrationTest.this.device.on();
             
-            // Assert
             assertAll(
                     () -> assertTrue(DeviceAndPolicyIntegrationTest.this.device.isOn()),
                     () -> verify(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy).attemptOn(),
@@ -68,14 +63,11 @@ public class DeviceAndPolicyIntegrationTest {
         @Test
         @DisplayName("on() should be callable multiple times when policy allows")
         void onShouldBeCallableMultipleTimesWhenPolicyAllows() {
-            // Arrange
             when(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy.attemptOn()).thenReturn(true);
             
-            // Act
             DeviceAndPolicyIntegrationTest.this.device.on();
             DeviceAndPolicyIntegrationTest.this.device.on(); // Second call
             
-            // Assert
             assertAll(
                     () -> assertTrue(DeviceAndPolicyIntegrationTest.this.device.isOn()),
                     () -> verify(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy, times(2)).attemptOn(),
@@ -91,15 +83,12 @@ public class DeviceAndPolicyIntegrationTest {
         @Test
         @DisplayName("off() should set device to off state when device is on")
         void offShouldSetDeviceOffWhenDeviceIsOn() {
-            // Arrange
             when(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy.attemptOn()).thenReturn(true);
             DeviceAndPolicyIntegrationTest.this.device.on();
             boolean isOn = DeviceAndPolicyIntegrationTest.this.device.isOn();
             
-            // Act
             DeviceAndPolicyIntegrationTest.this.device.off();
             
-            // Assert
             assertAll(
                     () -> assertTrue(isOn),
                     () -> assertFalse(DeviceAndPolicyIntegrationTest.this.device.isOn()),
@@ -111,10 +100,8 @@ public class DeviceAndPolicyIntegrationTest {
         @Test
         @DisplayName("off() should maintain off state when device is already off")
         void offShouldMaintainOffStateWhenDeviceIsAlreadyOff() {
-            // Act
             DeviceAndPolicyIntegrationTest.this.device.off();
             
-            // Assert
             assertAll(
                     () -> assertFalse(DeviceAndPolicyIntegrationTest.this.device.isOn()),
                     () -> verify(DeviceAndPolicyIntegrationTest.this.device, times(1)).off(),
@@ -125,15 +112,12 @@ public class DeviceAndPolicyIntegrationTest {
         @Test
         @DisplayName("off() should not interact with the policy")
         void offShouldNotInteractWithPolicy() {
-            // Arrange
             when(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy.attemptOn()).thenReturn(true);
             DeviceAndPolicyIntegrationTest.this.device.on();
-            reset(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy); // Clear previous interactions
+            reset(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy);
             
-            // Act
             DeviceAndPolicyIntegrationTest.this.device.off();
             
-            // Assert
             assertAll(
                     () -> verifyNoInteractions(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy),
                     () -> verify(DeviceAndPolicyIntegrationTest.this.device).off()
@@ -148,16 +132,13 @@ public class DeviceAndPolicyIntegrationTest {
         @Test
         @DisplayName("reset() should turn device off and reset policy")
         void resetShouldTurnDeviceOffAndResetPolicy() {
-            // Arrange
             when(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy.attemptOn()).thenReturn(true);
             DeviceAndPolicyIntegrationTest.this.device.on();
             
             boolean isOn = DeviceAndPolicyIntegrationTest.this.device.isOn();
             
-            // Act
             DeviceAndPolicyIntegrationTest.this.device.reset();
             
-            // Assert
             assertAll(
                     () -> assertTrue(isOn),
                     () -> assertFalse(DeviceAndPolicyIntegrationTest.this.device.isOn()),
@@ -169,10 +150,8 @@ public class DeviceAndPolicyIntegrationTest {
         @Test
         @DisplayName("reset() should reset policy even when device is already off")
         void resetShouldResetPolicyEvenWhenDeviceIsAlreadyOff() {
-            // Act
             DeviceAndPolicyIntegrationTest.this.device.reset();
             
-            // Assert
             assertAll(
                     () -> assertFalse(DeviceAndPolicyIntegrationTest.this.device.isOn()),
                     () -> verify(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy).reset(),
@@ -183,10 +162,8 @@ public class DeviceAndPolicyIntegrationTest {
         @Test
         @DisplayName("reset() should call off() internally")
         void resetShouldCallOffInternally() {
-            // Act
             DeviceAndPolicyIntegrationTest.this.device.reset();
             
-            // Assert
             assertAll(
                     () -> verify(DeviceAndPolicyIntegrationTest.this.device).off(),
                     () -> verify(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy).reset()
@@ -197,19 +174,15 @@ public class DeviceAndPolicyIntegrationTest {
     @Test
     @DisplayName("isOn() should return correct state")
     void isOnShouldReturnCorrectState() {
-        // Initially off
         boolean actualFirstOnState = this.device.isOn();
         
-        // When turned on
         when(this.mockFailingPolicy.attemptOn()).thenReturn(true);
         this.device.on();
         boolean actualSecondOnState = this.device.isOn();
         
-        // When turned off
         this.device.off();
         boolean actualThirdOnState = this.device.isOn();
         
-        // Verify method calls
         assertAll(
                 () -> assertFalse(actualFirstOnState),
                 () -> assertTrue(actualSecondOnState),
@@ -223,17 +196,13 @@ public class DeviceAndPolicyIntegrationTest {
     @Test
     @DisplayName("toString() should include policy name and on state")
     void toStringShouldIncludePolicyNameAndOnState() {
-        // Arrange
         when(this.mockFailingPolicy.policyName()).thenReturn("TestPolicy");
         
-        // Act & Assert - Initially off
         String actualStandardDeviceString = this.device.toString();
         
-        // Turn on and check again
         when(this.mockFailingPolicy.attemptOn()).thenReturn(true);
         this.device.on();
         
-        // Assert - After turning on
         assertAll(
                 () -> assertEquals("StandardDevice{policy=TestPolicy, on=false}", actualStandardDeviceString),
                 () -> assertEquals("StandardDevice{policy=TestPolicy, on=true}", this.device.toString()),
