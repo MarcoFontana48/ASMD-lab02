@@ -1,3 +1,109 @@
+# Lab 02 - Operational Task
+
+In the AlternateStandardDeviceTest class, a Mock is used to mimic a response from the mocked object, defining a response to received when calling its methods. A Spy is used to check the number of interactions with the object:
+
+```java
+public class AlternateStandardDeviceTest {
+
+    private Device device;
+    @Mock FailingPolicy stubFailingPolicy;
+    @Spy RandomFailing spyRandomPolicy;
+
+    @BeforeEach
+    void init() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void testMock() {
+        device = new StandardDevice(this.stubFailingPolicy);
+        // multiple stubbing
+        when(this.stubFailingPolicy.attemptOn()).thenReturn(false);
+        when(this.stubFailingPolicy.policyName()).thenReturn("mock");
+        assertThrows(IllegalStateException.class, () -> device.on());
+        assertEquals("StandardDevice{policy=mock, on=false}", device.toString());
+    }
+
+    @Test
+    void testSpy() {
+        device = new StandardDevice(this.spyRandomPolicy);
+        // no interactions with the spy yet
+        verifyNoInteractions(this.spyRandomPolicy);
+        try{
+            device.on();
+        } catch (IllegalStateException e){}
+        // has attemptOn been called?
+        verify(this.spyRandomPolicy).attemptOn();
+    }
+}
+```
+
+Unit tests were made to test the policy and the device, here are some of the defined tests (more are available at 'src/test/java/devices/StandardDeviceUnitTest.java' and 'src/test/java/devices/RandomFailingUnitTest.java'):
+
+This test mocks the policy and acts on its behalf, returning the defined values. Making the device never turn on, since the policy is an always failing policy.
+```java
+    class AlwaysFailingPolicy {
+        @Mock
+        FailingPolicy alwaysFailingPolicyStub;
+
+        @BeforeEach
+        void init() {
+            MockitoAnnotations.openMocks(this);
+            when(this.alwaysFailingPolicyStub.attemptOn()).thenReturn(false);
+            when(this.alwaysFailingPolicyStub.policyName()).thenReturn("alwaysFailingPolicy");
+            StandardDeviceUnitTest.this.device = new StandardDevice(this.alwaysFailingPolicyStub);
+        }
+
+        @Test
+        @DisplayName("Device turn on accordingly to failing policy")
+        @Tag("UnitTest")
+        void testDeviceDoNotTurnOnAccordinglyToFailingPolicy() {
+            assertAll(
+                    () -> assertThrows(IllegalStateException.class, () -> StandardDeviceUnitTest.this.device.on()),
+                    () -> assertFalse(StandardDeviceUnitTest.this.device.isOn())
+            );
+        }
+```
+
+This test mocks a random generator object and makes it always return a 'true' boolean, instead of a random one. It mimics the behaviour of a random boolean generator when the resulting value is 'true'. The same can be done testing its behaviour when the resulting value will be 'false', in order to test it considering each possible outcome:
+
+```
+    class AlwaysTrueRandomFailingPolicy {
+        @BeforeEach
+        public void init() {
+            when(RandomFailingUnitTest.this.randomGenerator.nextBoolean()).thenReturn(true);
+        }
+
+        @Test
+        @Tag("UnitTest")
+        @DisplayName("The RandomFailing policy should always return true")
+        public void testAttemptOn() {
+            assertFalse(RandomFailingUnitTest.this.failingPolicy.attemptOn());
+        }
+```
+
+About integration tests, multiple tests were generated to verify the proper collaboration between the device and failing policy. This is an example test where a device is turned on but the policy prevents it, so the device does not turn on, showing the collaboration between them. More tests are available at '':
+
+```java
+    @Nested
+    @DisplayName("Tests for device off() method")
+    class OffMethodTests {
+        @Test
+        @DisplayName("off() should set device to off state when device is on")
+        void offShouldSetDeviceOffWhenDeviceIsOn() {
+            when(DeviceAndPolicyIntegrationTest.this.mockFailingPolicy.attemptOn()).thenReturn(true);
+            DeviceAndPolicyIntegrationTest.this.device.on();
+            boolean isOn = DeviceAndPolicyIntegrationTest.this.device.isOn();
+            DeviceAndPolicyIntegrationTest.this.device.off();
+            assertAll(
+                    () -> assertTrue(isOn),
+                    () -> assertFalse(DeviceAndPolicyIntegrationTest.this.device.isOn()),
+                    () -> verify(DeviceAndPolicyIntegrationTest.this.device, times(1)).off(),
+                    () -> verify(DeviceAndPolicyIntegrationTest.this.device, atLeast(2)).isOn()
+            );
+        }
+```
+
 # Lab 02 - R&D Task 04 "TESTING-LLM"
 
 In this task it is required to write unit and integration tests using LLMs.
